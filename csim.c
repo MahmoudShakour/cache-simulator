@@ -5,11 +5,14 @@
 #include <unistd.h>
 #include <stdio.h>
 
-struct access{
+typedef struct
+{
     char type[5];
     unsigned int address;
     int size;
-};
+} Access;
+
+
 
 void parseArguments(int argc, char *argv[], int *numberOfSetBits, int *numberOfLines, int *numberOfBytes, char *fileName)
 {
@@ -31,39 +34,40 @@ void parseArguments(int argc, char *argv[], int *numberOfSetBits, int *numberOfL
     }
 }
 
-void parseOperations(char *fileName,struct access *operations,int * numberOfOperations)
+void parseOperations(char *fileName, Access *operations, int *numberOfOperations)
 {
     FILE *file;
     file = fopen(fileName, "r");
     char type[5];
     unsigned int address;
-    int size,i=0;
-    while(fscanf(file, " %s %x,%d", type, &address,&size)>0){
-        strcpy(operations[i].type,type);
-        operations[i].address= address;
-        operations[i].size= size;
+    int size, i = 0;
+    while (fscanf(file, " %s %x,%d", type, &address, &size) > 0)
+    {
+        strcpy(operations[i].type, type);
+        operations[i].address = address;
+        operations[i].size = size;
         i++;
     }
-    *numberOfOperations=i;
+    *numberOfOperations = i;
 }
 
 int main(int argc, char *argv[])
 {
 
-    int numberOfSetBits, numberOfLines, numberOfBytes,numberOfOperations;
+    int numberOfSetBits, numberOfLines, numberOfBytes, numberOfOperations;
     char fileName[30];
-    struct access operations[20];
+    Access operations[20];
 
     parseArguments(argc, argv, &numberOfSetBits, &numberOfLines, &numberOfBytes, fileName);
 
     printf("%d %d %d %s\n", numberOfSetBits, numberOfLines, numberOfBytes, fileName);
 
-    parseOperations(fileName,operations,&numberOfOperations);
+    parseOperations(fileName, operations, &numberOfOperations);
 
-    for(int i=0;i<numberOfOperations;i++){
-        printf(" %s %x,%d\n",operations[i].type,operations[i].address,operations[i].size);
+    for (int i = 0; i < numberOfOperations; i++)
+    {
+        printf(" %s %x,%d\n", operations[i].type, operations[i].address, operations[i].size);
     }
-
 
     // printSummary(0, 0, 0);
     return 0;
