@@ -42,6 +42,22 @@ void parseArguments(int argc, char *argv[], int *numberOfSetBits, int *numberOfL
         }
     }
 }
+int getNumberOfOperations(char *fileName)
+{
+    FILE *file;
+    file = fopen(fileName, "r");
+    int linescount = 0;
+    while (!feof(file))
+    {
+        int ch = fgetc(file);
+        if (ch == '\n')
+        {
+            linescount++;
+        }
+    }
+    fclose(file);
+    return linescount;
+}
 
 void parseOperations(char *fileName, Access *operations, int *numberOfOperations)
 {
@@ -58,6 +74,7 @@ void parseOperations(char *fileName, Access *operations, int *numberOfOperations
         i++;
     }
     *numberOfOperations = i;
+    fclose(file);
 }
 
 void getAddressInfo(unsigned long address, int numberOfSetBits, int numberOfBlockBits, unsigned long *tag, unsigned long *set, unsigned long *blockOffset)
@@ -124,7 +141,17 @@ void replaceWithLRU(Line **cache, unsigned long set, unsigned long tag, int numb
     cache[set][index].time_stamp = time++;
 }
 
-Access operations[2000000];
+void clearCache(Line **cache, unsigned long numberOfSetBits, unsigned long numberOfLines)
+{
+    for (int i = 0; i < 1 << numberOfSetBits; i++)
+    {
+        for (int j = 0; j < numberOfLines; j++)
+        {
+            cache[i][j].valid = 0;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int numberOfHits = 0, numberOfMisses = 0, numberOfEvictions = 0;
@@ -132,15 +159,10 @@ int main(int argc, char *argv[])
     char fileName[30];
 
     parseArguments(argc, argv, &numberOfSetBits, &numberOfLines, &numberOfBlockBits, fileName);
+    numberOfOperations = getNumberOfOperations(fileName);
 
-    // printf("%d %d %d %s\n", numberOfSetBits, numberOfLines, numberOfBlockBits, fileName);
-
+    Access* operations=(Access*)malloc((numberOfOperations+5)*sizeof(Access));
     parseOperations(fileName, operations, &numberOfOperations);
-
-    for (int i = 0; i < numberOfOperations; i++)
-    {
-        // printf(" %s %lu,%d\n", operations[i].type, operations[i].address, operations[i].size);
-    }
 
     Line **cache = (Line **)malloc((1 << numberOfSetBits) * sizeof(Line *));
     for (int i = 0; i < (1 << numberOfSetBits); i++)
@@ -148,43 +170,31 @@ int main(int argc, char *argv[])
         cache[i] = (Line *)malloc(numberOfLines * sizeof(Line));
     }
 
-    for (int i = 0; i < 1 << numberOfSetBits; i++)
-    {
-        for (int j = 0; j < numberOfLines; j++)
-        {
-            cache[i][j].valid = 0;
-            // printf("%d\n", cache[i][j].valid);
-        }
-    }
+    clearCache(cache, numberOfSetBits, numberOfLines);
 
     for (int i = 0; i < numberOfOperations; i++)
     {
-        if(strcmp(operations[i].type,"I")==0){
+        if (strcmp(operations[i].type, "I") == 0)
             continue;
-        }
+
         unsigned long tag = 0, set = 0, blockOffset = 0;
-        // printf("%lu\n", operations[i].address);
         getAddressInfo(operations[i].address, numberOfSetBits, numberOfBlockBits, &tag, &set, &blockOffset);
-        printf("%lu %lu %lu\n", tag, set, blockOffset);
 
         if (isHit(numberOfLines, set, tag, cache))
         {
             numberOfHits++;
-            printf("hit: %d\n", i);
         }
         else
         {
             if (processColdMiss(cache, set, tag, numberOfLines))
             {
                 numberOfMisses++;
-                printf("miss: %d\n", i);
             }
             else
             {
                 replaceWithLRU(cache, set, tag, numberOfLines);
                 numberOfMisses++;
                 numberOfEvictions++;
-                printf("missevict: %d\n", i);
             }
         }
         if (strcmp(operations[i].type, "M") == 0)
