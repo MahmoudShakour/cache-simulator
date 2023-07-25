@@ -154,7 +154,7 @@ void clearCache(Line **cache, unsigned long numberOfSetBits, unsigned long numbe
 
 int main(int argc, char *argv[])
 {
-    int numberOfHits = 0, numberOfMisses = 0, numberOfEvictions = 0;
+    int hitsCount = 0, missesCount = 0, evictionsCount = 0;
     int numberOfSetBits, numberOfLines, numberOfBlockBits, numberOfOperations;
     char fileName[30];
 
@@ -182,27 +182,27 @@ int main(int argc, char *argv[])
 
         if (isHit(numberOfLines, set, tag, cache))
         {
-            numberOfHits++;
+            hitsCount++;
         }
         else
         {
             if (processColdMiss(cache, set, tag, numberOfLines))
             {
-                numberOfMisses++;
+                missesCount++;
             }
             else
             {
                 replaceWithLRU(cache, set, tag, numberOfLines);
-                numberOfMisses++;
-                numberOfEvictions++;
+                missesCount++;
+                evictionsCount++;
             }
         }
         if (strcmp(operations[i].type, "M") == 0)
         {
-            numberOfHits++;
+            hitsCount++;
         }
     }
 
-    printSummary(numberOfHits, numberOfMisses, numberOfEvictions);
+    printSummary(hitsCount, missesCount, evictionsCount);
     return 0;
 }
